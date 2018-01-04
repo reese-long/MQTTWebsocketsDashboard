@@ -1,0 +1,163 @@
+
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js" type="text/javascript"></script>
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<link rel = "stylesheet"
+   type = "text/css"
+   href = "style.css" />  </head>
+  <body>
+  	<h1 align=center></h1>
+  
+
+    <script>
+window.onload = function () {
+var Tcount = 0;
+var Hcount = 0;
+var tempDPS = []; // dataPoints
+var humidityDPS = [];
+var chart = new CanvasJS.Chart("chartContainer", {
+	backgroundColor: "#3E6873",
+ 	animationEnabled: true,
+	zoomEnabled: true,
+// 	title :{
+// 		text: "Temperature & Humidity",
+// 		fontColor: "White",
+//      	fontSize: 30,
+// //     borderThickness:5
+// 		},
+
+	axisX:{
+		valueFormatString:"hh:mm:ss TT",
+		interval:1,
+		labelFontSize:16,
+		labelFontColor:"Black"
+		},
+
+	axisY: {
+		minimum:10,
+		maximum: 120,
+		interval:10,
+		suffix: " °F",
+		labelFontSize:20,
+		includeZero: false,
+		labelFontColor:"Black"
+		},
+
+	legend:{
+		cursor: "pointer",
+		fontSize: 24,	
+		},
+
+	toolTip:{
+		cornerRadius: 4
+		},
+
+	data: [
+
+	{
+		name: "Temperature",
+		showInLegend: true,
+		lineThickness:6,
+  		markerColor: "Black",
+		olor:"Red",
+		type: "spline",
+		dataPoints: tempDPS
+	},
+
+	{
+		name: "Humidity",
+		showInLegend: true,
+		lineThickness:6,
+    	markerColor: "Black",
+		color:"Orange",
+		type: "spline",
+		dataPoints: humidityDPS
+	}]
+
+});
+
+var xVal = 0;
+var yVal = 100; 
+var updateInterval = 1000;
+var dataLength = 80; // number of dataPoints visible at any point
+
+var updateChart = function (count) {
+
+	
+
+	if (tempDPS.length > dataLength) {
+		tempDPS.shift();
+	}
+
+	if (humidityDPS.length > dataLength) {
+		humidityDPS.shift();
+	}
+
+	chart.render();
+};
+
+updateChart(dataLength);
+setInterval(function(){updateChart(dataLength)}, updateInterval);
+
+
+
+var client = new Paho.MQTT.Client("broker.mqttdashboard.com", Number(8000), "/ws");
+var tempFeed = "smartsystem/sensors/temperature";
+var humidityFeed= "smartsystem/sensors/humidity";
+
+client.onConnectionLost = onConnectionLost;
+client.onMessageArrived = onMessageArrived;
+
+// connect the client
+client.connect({onSuccess:onConnect});
+
+
+// called when the client connects
+function onConnect() {
+  // Once a connection has been made, make a subscription and send a message.
+  console.log("onConnect");
+  client.subscribe(tempFeed);
+  client.subscribe(humidityFeed)
+  //message = new Paho.MQTT.Message("Hello");
+  //message.destinationName = "World";
+ // client.send(message);
+}
+
+// called when the client loses its connection
+function onConnectionLost(responseObject) {
+  if (responseObject.errorCode !== 0) {
+    console.log("onConnectionLost:"+responseObject.errorMessage);
+  }
+}
+
+// called when a message arrives
+function onMessageArrived(message) {
+	console.log("INT: ", message.payloadString.slice(6));
+	console.log(message.destinationName);
+	if(message.destinationName === tempFeed){
+	tempDPS.push({x:new Date,y:Number(message.payloadString.slice(7))});
+  Tcount++;
+}
+else{
+	humidityDPS.push({x:new Date,y:Number(message.payloadString.slice(7))});
+	//console.log('DPS: ' , dps)
+  Hcount++;
+}
+}
+}
+</script>
+  <script>
+//Create a new Client object with your broker's hostname, port and your own clientId
+//var client = new Messaging.Client("broker.hivemq.com", 8000);
+ 
+
+
+
+    </script>
+    <div id='hi'>
+    <div id="chartContainer" style = "border:100px;"></div>
+</div>
+<div id='test'></div>
+  </body>
+</html>

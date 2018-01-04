@@ -1,0 +1,13 @@
+#chartContainer{
+	height: 50vh; 
+	border:10px;
+	
+
+}
+
+#test{
+	border-radius: 20px;
+	width:100px;
+	height:100px;
+	background-color: Yellow;
+}
